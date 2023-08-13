@@ -41,6 +41,20 @@ async function run() {
   try {
     const userCollection = client.db("ECommerceData").collection("userData");
 
+    app.get("/jwt", async (req, res) => {
+      const phone = req.query.phone;
+      const query = { tel: phone };
+      const user = await userCollection.findOne(query);
+      if (user) {
+        const token = jwt.sign({ phone }, process.env.ACCESS_TOKEN, {
+          expiresIn: "1h",
+        });
+        return res.send({ accessToken: token });
+      }
+      console.log(user);
+      res.status(403).send({ accessToken: "" });
+    });
+
     const verifyAdmin = async (req, res, next) => {
       const decodedEmail = req.decoded.email;
       const query = { email: decodedEmail };
@@ -52,7 +66,11 @@ async function run() {
       next();
     };
 
-    
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const result = await userCollection.insertOne(user);
+      res.send(result);
+    });
   } finally {
   }
 }
